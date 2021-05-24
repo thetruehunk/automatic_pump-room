@@ -1,0 +1,16 @@
+{
+    "SERVER": false,
+    "SERVER-IP": "192.168.12.10",
+    "SYSLOG-SERVER-IP": "192.168.12.115",
+    "ESSID": "ap-02.estonian.dyndns.org",
+    "PASSWORD": "w5mU5xhzlaJKosFSlBtfk",
+    "AP-ESSID": "trekbit2",
+    "AP-PASSWORD": "12345678",
+    "CHANNEL": 1,
+    "WEB-LOGIN": "trekbit",
+    "WEB-PASSWORD": "d18CV02",
+    "RELAY-PIN": "18",
+    "RELAY-ENABLE": true,
+    "RELAY-TIMER": 2.5,
+    "TIME-ZONE": "3"
+}
