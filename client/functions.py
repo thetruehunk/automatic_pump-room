@@ -1,9 +1,7 @@
 import errno
 import gc
 import sys
-
 import machine
-import network
 import NFC_PN532 as nfc
 import uasyncio as asyncio
 import ubinascii
@@ -12,11 +10,6 @@ import ulogging as logging
 import urequests as requests
 import utime as time
 from machine import SoftSPI, Pin
-
-
-
-
-ip_addr = ""
 
 
 def free(full=False):
@@ -52,37 +45,38 @@ def save_config(config, config_file):
         logging.info("No such config file:", config_file) 
 
 
-def load_data(data_file):
-    #try:
-    with open(data_file) as d:
-        data = json.load(d)
-        d.close()
-    return data
-    #except:
-     #   logging.info("No such data file:", data_file)
-
-
-def save_data(data, data_file):
-    try:
-        with open(data_file, "w") as d:
-            json.dump(data, d)
-            d.close()
-    except:
-        logging.info("No such data file:", data_file)
-
-
-def set_limit_handler(qs):
-    data_f = load_data("data.json")
-    result1 = qs.replace("_", "=")
-    result2 = result1.replace("&", "=")
-    result3 = result2.split("=")
-    day_limit_value = result3[2]
-    number = result3[3]
-    card = result3[4]
-    value = result3[5]
-    data_f[number][card] = int(value)
-    data_f[number]["day limit"] = int(day_limit_value)
-    save_data(data_f, "data.json")
+# def load_data(data_file):
+#     #try:
+#     with open(data_file) as d:
+#         data = json.load(d)
+#         d.close()
+#     return data
+#     #except:
+#      #   logging.info("No such data file:", data_file)
+# 
+# 
+# def save_data(data, data_file):
+#     try:
+#         with open(data_file, "w") as d:
+#             json.dump(data, d)
+#             d.close()
+#     except:
+#         logging.info("No such data file:", data_file)
+# 
+# 
+# def set_limit_handler(qs):
+#     pass
+#     # data_f = load_data("data.json")
+#     # result1 = qs.replace("_", "=")
+#     # result2 = result1.replace("&", "=")
+#     # result3 = result2.split("=")
+#     # day_limit_value = result3[2]
+#     # number = result3[3]
+#     # card = result3[4]
+#     # value = result3[5]
+#     # data_f[number][card] = int(value)
+#     # data_f[number]["day limit"] = int(day_limit_value)
+#     # save_data(data_f, "data.json")
 
 
 def set_config_handler(qs):
@@ -91,66 +85,14 @@ def set_config_handler(qs):
     for item in param:
         key, value = item.split('=')
         config[key] = value
-    if not 'SERVER=True' in qs:
-        config['SERVER'] = "False"
+    if not 'SYSLOG=True' in qs:
+        config['SYSLOG'] = "False"
     save_config(config, 'config.json')
 
 
-def add_card_handler(qs):
-    pass
+# def add_card_handler(qs):
+#     pass
 
-
-def wifi_init():
-    config = load_config("config.json")
-    global ip_addr
-    try:
-        wifi_if = network.WLAN(network.STA_IF)
-        if not wifi_if.isconnected():
-            print("connecting to network...")
-        wifi_if.active(True)
-        wifi_if.connect(config["ESSID"], config["PASSWORD"])
-        #  Try connect to Access Point
-        a = 0
-        while not wifi_if.isconnected() and a != 5:
-            print(".", end="")
-            time.sleep(5)
-            a += 1
-            # If module cannot connect to WiFi - he's creates personal AP
-        if not wifi_if.isconnected():
-            wifi_if.disconnect()
-            wifi_if.active(False)
-            wifi_if = network.WLAN(network.AP_IF)
-            wifi_if.active(True)
-            wifi_if.config(
-                essid=(config["AP-ESSID"]),
-                authmode=network.AUTH_WPA_WPA2_PSK,
-                password=(config["AP-PASSWORD"]),
-                channel=int(config["CHANNEL"])
-            )
-            wifi_if.ifconfig(
-                ("10.27.10.1", "255.255.255.0", "10.27.10.1", "10.27.10.1")
-            )
-        print("network config:", wifi_if.ifconfig())
-        ip_addr = wifi_if.ifconfig()[0]
-    except RuntimeError:
-        logging.info("Cannot init wifi")
-        time.sleep(5)
-        machine.reset()
-
-
-def check_wifi_status():
-    pass
-    # TODO:
-    # WLAN.status([param])
-    # Return the current status of the wireless connection.
-    # When called with no argument the return value describes the network link status.
-    # The possible statuses are defined as constants:
-    # STAT_IDLE – no connection and no activity,
-    # STAT_CONNECTING – connecting in progress,
-    # STAT_WRONG_PASSWORD – failed due to incorrect password,
-    # STAT_NO_AP_FOUND – failed because no access point replied,
-    # STAT_CONNECT_FAIL – failed due to other problems,
-    # STAT_GOT_IP – connection successful.
 
 
 def init_card_reader():
@@ -184,30 +126,28 @@ def read_card(dev, tmot, config, relay, led, sys_log):
     if uid is None:
         logging.info("CARD NOT FOUND")
     else:
-        # если мы клиент - запрашиваем данные с сервера
         # TODO: replase whis blink code to funtion
         led_card_found(led)
-
         numbers = [i for i in uid]
         string_ID = "{}{}{}{}".format(*numbers)
         print("Card number is {}".format(string_ID))
         req = requests.get(GET_CARD_URL + string_ID)
-        # sys_log.info("Card number {} readed".format(string_ID))
+        sys_log.info("Card number {} readed".format(string_ID))
         card = json.loads(req.text)
-        if card and card["day_limit"] > 0:
+        if card and card["current_daily_limit"] > 0 and card["total_limit"] > 0:
             # if выдано 2 порции day limit
             logging.info("Loading....")
             sys_log.info("Balance of procedures is positive: Loading....")
             relay.off()
-            time.sleep(float(config["RELAY-TIMER"]))  # задержка реле (время налива)
+            # time.sleep(float(config["RELAY-TIMER"][card["water_type"]]))  # задержка реле (время налива)
+            time.sleep(float(config["RELAY-TIMER-{}".format(card["water_type"])]))  # задержка реле (время налива)
             relay.on()
             card["total_limit"] = card["total_limit"] - 1
-            card["day_limit"] = card["day_limit"] - 1
+            card["current_daily_limit"] = card["current_daily_limit"] - 1
             card["realese_count"] = card["realese_count"] + 1
             
             post_data = json.dumps(card) 
             req = requests.post(UPDATE_CARD_URL, headers = {'content-type': 'application/json'}, data = post_data)
-            #time.sleep(1) 
         else:
             # logging.info('Card not in list or balance is zero')
             sys_log.info('Card not in list or balance is zero')
@@ -271,10 +211,14 @@ def require_auth(func):
 
 
 def led_card_found(led):
-    for i in range(3):
+    # TODO сделать красиво
+        led.on()
+        time.sleep(0.1)
         led.off()
         time.sleep(0.1)
-        led.on
+        led.on()
+        time.sleep(0.1)
+        led.off()
 
 
 def led_card_disable(led):

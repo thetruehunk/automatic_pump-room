@@ -23,11 +23,14 @@ class Card(Base):
 
     id = Column(Integer, primary_key=True)
     card_id = Column(String)
+    date_init = Column(String)
     water_type = Column(Integer)
     total_limit = Column(Integer)
-    day_limit = Column(Integer)
+    daily_limit = Column(Integer)
+    current_daily_limit = Column(Integer)
     realese_count = Column(Integer)
 
 #if not engine.dialect.has_table(engine, "cards"):
 if not inspect(engine).has_table("cards"):
     Base.metadata.create_all(engine)
+
