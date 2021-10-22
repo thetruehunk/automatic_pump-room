@@ -6,7 +6,6 @@ import NFC_PN532 as nfc
 import uasyncio as asyncio
 import ubinascii
 import ujson as json
-import ulogging as logging
 import urequests as requests
 import utime as time
 from machine import SoftSPI, Pin
@@ -42,7 +41,7 @@ def save_config(config, config_file):
             json.dump(config, f)
             f.close()
     except:
-        logging.info("No such config file:", config_file) 
+        print("No such config file:", config_file) 
 
 
 # def load_data(data_file):
@@ -90,15 +89,9 @@ def set_config_handler(qs):
     save_config(config, 'config.json')
 
 
-# def add_card_handler(qs):
-#     pass
-
-
-
 def init_card_reader():
     # PN532 module connect and initialize
     try:
-        #spi_dev = SPI(baudrate=1000000, sck=Pin(5), mosi=Pin(23), miso=Pin(19))
         spi_dev = SoftSPI(baudrate=1000000, sck=Pin(5), mosi=Pin(23), miso=Pin(19))
         cs = Pin(22, Pin.OUT)
         cs.on()
@@ -108,7 +101,7 @@ def init_card_reader():
         pn532.SAM_configuration()
         return pn532
     except RuntimeError:
-        logging.info("Card reader not initialized")
+        print("Card reader not initialized")
         time.sleep(5)
         machine.reset()
 
@@ -117,65 +110,56 @@ def check_card_reader():
     pass
 
 
-def read_card(dev, tmot, config, relay, led, sys_log):
+def read_card(dev, tmot, config, relay, led, syslog):
     GET_CARD_URL = "http://" + config['SERVER-IP'] + ":5000/api/v1/resources/get_card?card_id=" 
     UPDATE_CARD_URL = "http://" + config['SERVER-IP'] + ":5000/api/v1/resources/update_card"
     led.on()
     print("Reading...")
     uid = dev.read_passive_target(timeout=tmot)
     if uid is None:
-        logging.info("CARD NOT FOUND")
+        print("CARD NOT FOUND")
     else:
         # TODO: replase whis blink code to funtion
         led_card_found(led)
         numbers = [i for i in uid]
         string_ID = "{}{}{}{}".format(*numbers)
         print("Card number is {}".format(string_ID))
+        syslog.info("Card number is {}".format(string_ID))
         req = requests.get(GET_CARD_URL + string_ID)
-        sys_log.info("Card number {} readed".format(string_ID))
         card = json.loads(req.text)
         if card and card["current_daily_limit"] > 0 and card["total_limit"] > 0:
             # if выдано 2 порции day limit
-            logging.info("Loading....")
-            sys_log.info("Balance of procedures is positive: Loading....")
+            print("Loading....")
+            syslog.info("Loading....")
             relay.off()
-            # time.sleep(float(config["RELAY-TIMER"][card["water_type"]]))  # задержка реле (время налива)
             time.sleep(float(config["RELAY-TIMER-{}".format(card["water_type"])]))  # задержка реле (время налива)
             relay.on()
-            card["total_limit"] = card["total_limit"] - 1
-            card["current_daily_limit"] = card["current_daily_limit"] - 1
-            card["realese_count"] = card["realese_count"] + 1
+            card["total_limit"] -= 1
+            card["current_daily_limit"] -= 1
+            card["realese_count"] -= 1
             
             post_data = json.dumps(card) 
+            syslog.info("Try to send update data for card {}".format(string_ID))
             req = requests.post(UPDATE_CARD_URL, headers = {'content-type': 'application/json'}, data = post_data)
+            syslog.info("OK")
         else:
-            # logging.info('Card not in list or balance is zero')
-            sys_log.info('Card not in list or balance is zero')
+            print('Card not in list or balance is zero')
+            syslog.warning("Card not in list or balance is zero")
 
 
-def read_card_loop(reader, config, relay, led, sys_log):
+async def read_card_loop(reader, config, relay, led, syslog):
     while True:
         try:
-            read_card(reader, 500, config, relay, led, sys_log)
+            read_card(reader, 500, config, relay, led, syslog)
             await asyncio.sleep(0.5)
         except RuntimeError as err:
-            # logging.info("Cannot get data from reader", err)
             print("Cannot get data from reader", err)
+            syslog.error("Cannot get data from reader", err)
             time.sleep(5)
             machine.reset()
         except OSError as error:
-            logging.info("OSError {}".format(error))
-
-
-def get_card_info(card_number):
-    data = load_data("data.json")
-    try:
-        card = data[card_number]
-        #del data
-        #gc.collect()
-        return card
-    except:
-        return False
+            print("OSError {}".format(error))
+            syslog.error("OSError {}".format(error))
 
 
 def require_auth(func):
@@ -211,14 +195,10 @@ def require_auth(func):
 
 
 def led_card_found(led):
-    # TODO сделать красиво
-        led.on()
-        time.sleep(0.1)
+    for i in range(2):
         led.off()
         time.sleep(0.1)
         led.on()
-        time.sleep(0.1)
-        led.off()
 
 
 def led_card_disable(led):

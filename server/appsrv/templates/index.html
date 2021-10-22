@@ -92,6 +92,7 @@
             xhr.open('POST', '/api/v1/resources/set_card', true);
             xhr.setRequestHeader('Content-type', 'application/json')
             xhr.send(JSON.stringify(value));
+            alert("Лимит установлен");
             //location.reload();
             };
             document.querySelectorAll('.table-info').forEach(item => {

@@ -12,9 +12,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import generic_repr
 from sqlalchemy.inspection import inspect
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-engine = create_engine("sqlite:///" + os.path.join(basedir, "data.db3"),
-                       echo=False,)
+#basedir = os.path.abspath(os.path.dirname(__file__))
+#engine = create_engine("sqlite:///" + os.path.join(basedir, "data.db3"),
+#                       echo=False,)
+engine = create_engine("sqlite:///db/data.db3", echo=False)
 Base = declarative_base()
 
 @generic_repr
