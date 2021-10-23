@@ -6,8 +6,8 @@ import uasyncio as asyncio
 import usyslog
 import utime as time
 from functions import (init_card_reader, load_config, read_card, read_card_loop, require_auth,
-                       set_config_handler)
-from machine import Pin
+                       set_config_handler, feed_watchdog)
+from machine import Pin, WDT
 
 
 
@@ -23,6 +23,8 @@ syslog = usyslog.UDPClient(ip=config["SYSLOG-SERVER-IP"])
 
 app = picoweb.WebApp(__name__)
 
+wdt = WDT()
+wdt.feed()
 
 @app.route("/")
 @require_auth
@@ -50,6 +52,7 @@ def send_config(req, resp):
 
 loop = asyncio.get_event_loop()
 loop.create_task(read_card_loop(pn532, config, relay, led, syslog))
+loop.create_task(feed_watchdog(wdt))
 
 app.run(debug=1, host="0.0.0.0", port=80)
 

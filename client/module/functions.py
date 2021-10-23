@@ -44,6 +44,12 @@ def save_config(config, config_file):
         print("No such config file:", config_file) 
 
 
+async def feed_watchdog(wdt):
+    while True:
+        wdt.feed()
+        await asyncio.sleep(1)
+
+
 # def load_data(data_file):
 #     #try:
 #     with open(data_file) as d:
