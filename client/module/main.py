@@ -23,7 +23,7 @@ syslog = usyslog.UDPClient(ip=config["SYSLOG-SERVER-IP"])
 
 app = picoweb.WebApp(__name__)
 
-wdt = WDT()
+wdt = WDT(timeout=5000)
 wdt.feed()
 
 @app.route("/")

@@ -29,7 +29,8 @@ class Card(Base):
     total_limit = Column(Integer)
     daily_limit = Column(Integer)
     current_daily_limit = Column(Integer)
-    realese_count = Column(Integer)
+    current_realese_count = Column(Integer)
+    total_realese_count = Column(Integer)
 
 #if not engine.dialect.has_table(engine, "cards"):
 if not inspect(engine).has_table("cards"):

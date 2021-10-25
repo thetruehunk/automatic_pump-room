@@ -142,7 +142,8 @@ def read_card(dev, tmot, config, relay, led, syslog):
             relay.on()
             card["total_limit"] -= 1
             card["current_daily_limit"] -= 1
-            card["realese_count"] -= 1
+            card["current_realese_count"] += 1
+            card["total_realese_count"] += 1
             
             post_data = json.dumps(card) 
             syslog.info("Try to send update data for card {}".format(string_ID))

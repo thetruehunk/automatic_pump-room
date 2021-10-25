@@ -52,7 +52,7 @@ def home():
         Card.water_type,
         Card.total_limit,
         Card.daily_limit,
-        Card.realese_count,
+        Card.current_realese_count,
     ).all()
 
     session.commit()
@@ -60,6 +60,26 @@ def home():
     app.logger.info(f"requested home page")
 
     return render_template("index.html", data=response)
+
+
+@app.route("/analytics", methods=["GET"])
+@auth.login_required
+def analytics():
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    response = session.query(
+        Card.card_id,
+        Card.water_type,
+        Card.date_init,
+        Card.current_realese_count,
+        Card.total_realese_count,
+    ).all()
+
+    session.commit()
+
+    app.logger.info(f"requested analytics page")
+
+    return render_template("analytics.html", data=response)
 
 
 @app.route("/api/v1/resources/get_card", methods=["GET"])
@@ -74,7 +94,8 @@ def get_card():
             Card.water_type,
             Card.total_limit,
             Card.current_daily_limit,
-            Card.realese_count,
+            Card.current_realese_count,
+            Card.total_realese_count,
         )
         .filter(Card.card_id == text(card_id))
         .first()
@@ -85,7 +106,8 @@ def get_card():
     card["water_type"] = response.water_type
     card["total_limit"] = response.total_limit
     card["current_daily_limit"] = response.current_daily_limit
-    card["realese_count"] = response.realese_count
+    card["current_realese_count"] = response.current_realese_count
+    card["total_realese_count"] = response.current_realese_count
 
     app.logger.info(f"requested data for card number: {card_id}")
 
@@ -110,7 +132,8 @@ def update_card():
     card.total_limit = post_data["total_limit"]
     card.current_daily_limit = post_data["current_daily_limit"]
     card.water_type = post_data["water_type"]
-    card.realese_count = post_data["realese_count"]
+    card.current_realese_count = post_data["current_realese_count"]
+    card.total_realese_count = post_data["total_realese_count"]
     session.commit()
     # micropython not support redirect
     app.logger.info(f'updated card {post_data["card_id"]}')
@@ -130,7 +153,7 @@ def set_card():
     card.daily_limit = post_data["daily_limit"]
     card.current_daily_limit = post_data["daily_limit"]
     card.water_type = post_data["water_type"]
-    card.realese_count = post_data["realese_count"]
+    card.current_realese_count = 0
     card.date_init = post_data["date_init"]
     session.commit()
 
