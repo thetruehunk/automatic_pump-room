@@ -107,7 +107,7 @@ def get_card():
     card["total_limit"] = response.total_limit
     card["current_daily_limit"] = response.current_daily_limit
     card["current_realese_count"] = response.current_realese_count
-    card["total_realese_count"] = response.current_realese_count
+    card["total_realese_count"] = response.total_realese_count
 
     app.logger.info(f"requested data for card number: {card_id}")
 
@@ -131,12 +131,11 @@ def update_card():
     )
     card.total_limit = post_data["total_limit"]
     card.current_daily_limit = post_data["current_daily_limit"]
-    card.water_type = post_data["water_type"]
     card.current_realese_count = post_data["current_realese_count"]
     card.total_realese_count = post_data["total_realese_count"]
     session.commit()
     # micropython not support redirect
-    app.logger.info(f'updated card {post_data["card_id"]}')
+    app.logger.info(f'updated card {post_data}')
 
     return jsonify({"response": "OK"})
 
@@ -157,7 +156,7 @@ def set_card():
     card.date_init = post_data["date_init"]
     session.commit()
 
-    app.logger.info(f'set limits for card {post_data["card_id"]}')
+    app.logger.info(f'set limits for card {post_data}')
 
     return redirect("/", code=303, Response=None)
 

@@ -146,7 +146,7 @@ def read_card(dev, tmot, config, relay, led, syslog):
             card["total_realese_count"] += 1
             
             post_data = json.dumps(card) 
-            syslog.info("Try to send update data for card {}".format(string_ID))
+            syslog.info("Try to send update data for card {}".format(card))
             req = requests.post(UPDATE_CARD_URL, headers = {'content-type': 'application/json'}, data = post_data)
             syslog.info("OK")
         else:

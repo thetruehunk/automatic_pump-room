@@ -3,7 +3,7 @@ version: '3'
 services:
 
   loading-system:
-    image: hunk/trekbit-loading-system:lates
+    image: hunk/trekbit-loading-system:latest
     container_name: trekbit-loading-system
     environment:
       - TZ=Europe/Moscow
