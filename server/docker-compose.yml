@@ -3,13 +3,14 @@ version: '3'
 services:
 
   loading-system:
-    image: hunk/trekbit-loading-system:latest
-    container_name: trekbit-loading-system
+    image: hunk/automatic_pump-room:latest
+    container_name: automatic_pump-room
     environment:
       - TZ=Europe/Moscow
     volumes:
       - "./db:/app/db"
       - "./log:/app/log"
+    network_mode: host
     ports:
       - 5000:5000
     restart: always
@@ -24,6 +25,7 @@ services:
     volumes:
       - ./syslog-ng:/config
       - ./log:/var/log
+    network_mode: host
     ports:
       - 514:514/udp
       - 601:6601/tcp

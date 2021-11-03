@@ -1,6 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask
+from flask import Flask, jsonify
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import redirect, request, jsonify, render_template
@@ -109,7 +109,7 @@ def get_card():
     card["current_realese_count"] = response.current_realese_count
     card["total_realese_count"] = response.total_realese_count
 
-    app.logger.info(f"requested data for card number: {card_id}")
+    app.logger.info(f"requested data for card number: {card}")
 
     return jsonify(card)
 
