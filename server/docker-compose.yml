@@ -12,7 +12,7 @@ services:
       - "./log:/app/log"
     network_mode: host
     ports:
-      - 5000:5000
+      - 5000:5001
     restart: always
   
   syslog-ng:

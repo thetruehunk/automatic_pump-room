@@ -42,32 +42,32 @@
             </div>
         </thead>
         <tbody>
-            {% for row in data %}
+            {% for card in data %}
                 <tr class="table-info"> 
                         <form action=/api/v1/resources/set_card method=POST>
                             <td>
-                                {{row[0]}}
-                                <input type=hidden name=card_id value={{row[1]}} readonly>
+                                {{card["id"]}}
+                                <input type=hidden name=card_id value={{card["card_id"]}} readonly>
                             </td>
                             <td>
-                                {{row[2]}}
-                                <input type=hidden name=date_init value={{row[2]}} readonly>
+                                {{card["date_init"]}}
+                                <input type=hidden name=date_init value={{card["date_init"]}} readonly>
                             </td>
                             <td>
-                                {{row[6]}}
+                                {{card["realese_count"]}}
                             </td>
                             <td>
-                                <select name=water_type value={{row[3]}}>
-                                    <option value='1' {% if row[3] == 1 %} selected {% endif %}>100мг</option>
-                                    <option value='2' {% if row[3] == 2 %} selected {% endif %}>150мг</option>
-                                    <option value='3' {% if row[2] == 3 %} selected {% endif %}>200мг</option>
+                                <select name=water_type value={{card["water_type"]}}>
+                                    <option value='1' {% if card["water_type"] == 1 %} selected {% endif %}>100мг</option>
+                                    <option value='2' {% if card["water_type"] == 2 %} selected {% endif %}>150мг</option>
+                                    <option value='3' {% if card["water_type"] == 3 %} selected {% endif %}>200мг</option>
                                 </select>
                             </td>
                             <td>
-                                <input type=number name=daily_limit value={{row[5]}} required>
+                                <input type=number name=daily_limit value={{card["daily_limit"]}} required>
                             </td>
                             <td>
-                                <input type=number name=total_limit value={{row[4]}} required>
+                                <input type=number name=total_limit value={{card["total_left"]}} required>
                             </td>
                             <td>
                                 <input class="btn btn-success" type=submit value=Установить>

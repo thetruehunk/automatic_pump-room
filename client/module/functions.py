@@ -117,8 +117,8 @@ def check_card_reader():
 
 
 def read_card(dev, tmot, config, relay, led, syslog):
-    GET_CARD_URL = "http://" + config['SERVER-IP'] + ":5000/api/v1/resources/get_card?card_id=" 
-    UPDATE_CARD_URL = "http://" + config['SERVER-IP'] + ":5000/api/v1/resources/update_card"
+    GET_CARD_URL = "http://" + config['SERVER-IP'] + ":5001/api/v1/resources/get_card?card_id=" 
+    UPDATE_CARD_URL = "http://" + config['SERVER-IP'] + ":5001/api/v1/resources/update_card"
     led.on()
     print("Reading...")
     uid = dev.read_passive_target(timeout=tmot)
@@ -132,18 +132,17 @@ def read_card(dev, tmot, config, relay, led, syslog):
         print("Card number is {}".format(string_ID))
         syslog.info("Card number is {}".format(string_ID))
         req = requests.get(GET_CARD_URL + string_ID)
-        card = json.loads(req.text)
-        if card and card["current_daily_limit"] > 0 and card["total_limit"] > 0:
+        card = json.loads(req.text)["data"][0]
+        if card and card["daily_left"] > 0 and card["total_left"] > 0:
             # if выдано 2 порции day limit
             print("Loading....")
             syslog.info("Loading....")
             relay.off()
             time.sleep(float(config["RELAY-TIMER-{}".format(card["water_type"])]))  # задержка реле (время налива)
             relay.on()
-            card["total_limit"] -= 1
-            card["current_daily_limit"] -= 1
-            card["current_realese_count"] += 1
-            card["total_realese_count"] += 1
+            card["total_left"] -= 1
+            card["daily_left"] -= 1
+            card["realese_count"] += 1
             
             post_data = json.dumps(card) 
             syslog.info("Try to send update data for card {}".format(card))

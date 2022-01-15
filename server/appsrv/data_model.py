@@ -1,32 +1,36 @@
-import os
 from dataclasses import dataclass
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy_utils import generic_repr
-from sqlalchemy.inspection import inspect
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
 
-engine = create_engine("sqlite:///db/data.db3", echo=False)
-Base = declarative_base()
+db = SQLAlchemy()
 
-@generic_repr
-class Card(Base):
+@dataclass
+class Card(db.Model):
+
     __tablename__ = "cards"
-    id = Column(Integer, primary_key=True)
-    card_id = Column(String)
-    date_init = Column(String)
-    water_type = Column(Integer)
-    total_limit = Column(Integer)
-    daily_limit = Column(Integer)
-    current_daily_limit = Column(Integer)
-    current_realese_count = Column(Integer)
-    total_realese_count = Column(Integer)
 
-#if not engine.dialect.has_table(engine, "cards"):
-if not inspect(engine).has_table("cards"):
-    Base.metadata.create_all(engine)
+    id: int = db.Column(db.Integer, primary_key=True)
+    card_id: int = db.Column(db.String)
+    date_init: str = db.Column(db.String)
+    water_type: str = db.Column(db.Integer)
+    total_limit: str = db.Column(db.Integer)
+    total_left: str = db.Column(db.Integer)
+    daily_limit: str = db.Column(db.Integer)
+    daily_left: str = db.Column(db.Integer)
+    realese_count: str = db.Column(db.Integer)
+    
+    @property
+    def serialized(self):
+        """Return object data in serializeable format"""
+        return {
+            'id': self.id,
+            'card_id': self.card_id,
+            'date_init': self.date_init,
+            'water_type': self.water_type,
+            'total_limit': self.total_limit,
+            'total_left': self.total_left,
+            'daily_limit': self.daily_limit,
+            'daily_left': self.daily_left,
+            'realese_count': self.realese_count,
+        }
 
