@@ -90,11 +90,11 @@ def update_card():
 def set_card():
     post_data = request.json
     card = Card.query.filter(Card.card_id == post_data["card_id"]).first()
-    card.total_limit = post_data["total_limit"]
-    card.total_left = post_data["total_limit"]
-    card.daily_limit = post_data["daily_limit"]
-    card.daily_left = post_data["daily_limit"]
-    card.water_type = post_data["water_type"]
+    card.total_limit = int(post_data["total_limit"])
+    card.total_left = int(post_data["total_limit"])
+    card.daily_limit = int(post_data["daily_limit"])
+    card.daily_left = int(post_data["daily_limit"])
+    card.water_type = int(post_data["water_type"])
     card.date_init = post_data["date_init"]
     card.realese_count = 0
     db.session.commit()
@@ -102,7 +102,7 @@ def set_card():
     return redirect("/", code=303, Response=None)
 
 
-@scheduler.task("cron", id="reset_daily_limit", day="*", hour="8", minute="24")
+@scheduler.task("cron", id="reset_daily_limit", day="*", hour="23", minute="59")
 def reset_daily_limit():
     for row in Card.query.all():
         row['daily_left'] = row['daily_limit'] 
