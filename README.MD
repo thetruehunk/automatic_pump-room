@@ -3,7 +3,7 @@
 *This project is automatisation system*
 *for water loading system*
 
-[Technical requirements](.docs/technical_requirements.md)
+[Technical requirements](./docs/technical_requirements.md)
 
 Перед использованием переименовать test_config.json в config.json
 
