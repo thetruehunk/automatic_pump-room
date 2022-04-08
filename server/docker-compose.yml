@@ -10,9 +10,9 @@ services:
     volumes:
       - "./db:/app/db"
       - "./log:/app/log"
-    network_mode: host
+        #network_mode: host
     ports:
-      - 5000:5001
+      - 5001:5001
     restart: always
   
   syslog-ng:
@@ -25,7 +25,7 @@ services:
     volumes:
       - ./syslog-ng:/config
       - ./log:/var/log
-    network_mode: host
+        #network_mode: host
     ports:
       - 514:514/udp
       - 601:6601/tcp
