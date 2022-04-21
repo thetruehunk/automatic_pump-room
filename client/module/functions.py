@@ -95,88 +95,6 @@ def set_config_handler(qs):
     save_config(config, 'config.json')
 
 
-def init_card_reader():
-    # PN532 module connect and initialize
-    try:
-        spi_dev = SoftSPI(baudrate=1000000, sck=Pin(5), mosi=Pin(23), miso=Pin(19))
-        cs = Pin(22, Pin.OUT)
-        cs.on()
-        pn532 = nfc.PN532(spi_dev, cs)
-        ic, ver, rev, support = pn532.get_firmware_version()
-        print("Found PN532 with firmware version: {0}.{1}".format(ver, rev))
-        pn532.SAM_configuration()
-        return pn532
-    except RuntimeError:
-        print("Card reader not initialized")
-        time.sleep(5)
-        machine.reset()
-
-
-def check_card_reader():
-    pass
-
-
-def read_card(dev, tmot, config, relay, led_green, led_blue, led_red, syslog):
-    try:
-        GET_CARD_URL = "http://" + config['SERVER-IP'] + ":5001/api/v1/resources/get_card?card_id=" 
-        UPDATE_CARD_URL = "http://" + config['SERVER-IP'] + ":5001/api/v1/resources/update_card"
-        led_wait_on(led_green)
-        print("Reading...")
-        uid = dev.read_passive_target(timeout=tmot)
-        if uid is None:
-            print("CARD NOT FOUND")
-        else:
-            # TODO: replase whis blink code to funtion
-            led_wait_off(led_green)
-            led_reading(led_green)
-            #led_card_found(led)
-            numbers = [i for i in uid]
-            string_ID = "{}{}{}{}".format(*numbers)
-            print("Card number is {}".format(string_ID))
-            syslog.info("Card number is {}".format(string_ID))
-            req = requests.get(GET_CARD_URL + string_ID)
-            card = json.loads(req.text)["data"][0]
-            if card and card["daily_left"] > 0 and card["total_left"] > 0:
-                # if выдано 2 порции day limit
-                print("Loading....")
-                syslog.info("Loading....")
-                relay.off()
-                time.sleep(float(config["RELAY-TIMER-{}".format(card["water_type"])]))  # задержка реле (время налива)
-                relay.on()
-                card["total_left"] -= 1
-                card["daily_left"] -= 1
-                card["realese_count"] += 1
-                
-                post_data = json.dumps(card) 
-                syslog.info("Try to send update data for card {}".format(card))
-                req = requests.post(UPDATE_CARD_URL, headers = {'content-type': 'application/json'}, data = post_data)
-                syslog.info("OK")
-            else:
-                print('Card not in list or balance/day_limit is zero')
-                led_warning(led_blue)
-                syslog.warning("Card not in list or balance/day_limit is zero")
-    except TypeError as err:
-        print(err)
-        led_error(led_red)
-
-
-async def read_card_loop(reader, config, relay, led_green, led_blue, led_red, syslog):
-    while True:
-        try:
-            read_card(reader, 500, config, relay, led_green, led_blue, led_red, syslog)
-            await asyncio.sleep(3)
-        except RuntimeError as err:
-            print("Cannot get data from reader", err)
-            led_error(led_red)
-            syslog.error("Cannot get data from reader", err)
-            time.sleep(5)
-            machine.reset()
-        except OSError as error:
-            print("OSError {}".format(error))
-            led_error(led_red)
-            syslog.error("OSError {}".format(error))
-
-
 def require_auth(func):
     config = load_config('config.json')
 
@@ -207,30 +125,4 @@ def require_auth(func):
         yield from func(req, resp)
 
     return auth
-
-
-def led_wait_on(led):
-    led.duty(1023)
-
-
-def led_wait_off(led):
-    led.duty(0)
-
-
-def led_reading(led):
-    led.duty(511)
-    time.sleep(2)
-    led.duty(0)
-
-
-def led_warning(led):
-    led.duty(300)
-    time.sleep(2)
-    led.duty(0)
-
-
-def led_error(led):
-    led.duty(500)
-    time.sleep(3) 
-    led.duty(0)
 

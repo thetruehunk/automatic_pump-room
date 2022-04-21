@@ -1,7 +1,7 @@
 import utime as time
 import network
 import machine
-import ulogging as logging
+import ulogging
 import ujson as json
 
 # TODO Вынести данную функцию
@@ -49,7 +49,7 @@ def activate():
             )
         print("network config:", wifi_if.ifconfig())
     except RuntimeError:
-        logging.info("Cannot init wifi")
+        ulogging.info("Cannot init wifi")
         time.sleep(5)
         machine.reset()
 

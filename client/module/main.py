@@ -1,35 +1,28 @@
 import gc
-import sys
 import machine
-import NFC_PN532 as nfc
 import picoweb
 import uasyncio as asyncio
 import usyslog
-import utime as time
-from functions import (init_card_reader, load_config, read_card, read_card_loop, require_auth,
-                       set_config_handler, feed_watchdog)
-from machine import Pin, WDT, PWM
+from functions import (
+        load_config,
+        require_auth,
+        set_config_handler,
+        feed_watchdog
+        )
+from controller import Pump
 
-
-
-relay = Pin(18, Pin.OUT)
-relay.on()
-
-led = Pin(4, Pin.OUT)
-
-led_blue = PWM(Pin(26), freq=1, duty=0)
-led_green = PWM(Pin(25), freq=1, duty=0)
-led_red = PWM(Pin(33), freq=1, duty=0)
-
-pn532 = init_card_reader()
 
 config = load_config("config.json")
 
 syslog = usyslog.UDPClient(ip=config["SYSLOG-SERVER-IP"])
 
+pump = Pump()
+pump.syslog = syslog
+pump.init_card_reader()
+
 app = picoweb.WebApp(__name__)
 
-wdt = WDT(timeout=15000)
+wdt = machine.WDT(timeout=15000)
 wdt.feed()
 
 
@@ -58,13 +51,13 @@ def send_config(req, resp):
 
 
 loop = asyncio.get_event_loop()
-loop.create_task(read_card_loop(pn532, config, relay, led_green, led_blue, led_red, syslog))
+loop.create_task(pump.read_card_loop())
 loop.create_task(feed_watchdog(wdt))
 
 try:
     app.run(debug=1, host="0.0.0.0", port=80)
 except KeyboardInterrupt:
-        wdt = WDT(timeout=3600000)
+        wdt = machine.WDT(timeout=3600000)
         wdt.feed()
         print("Aborted through keyboard")
 
