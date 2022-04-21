@@ -35,14 +35,30 @@ class Logger:
 
     def isEnabledFor(self, level):
         return level >= (self.level or _level)
+    
+    def dump(self, msg, *args):
+            if not args:
+                file = open("system.log", "a+")
+                file.seek(file.tell())
+                file.write(msg + "\n")
+                file.flush()
+            else:
+                file = open("system.log", "a+")
+                file.seek(file.tell())
+                file.write(msg % args + "\n")
+                file.flush()
 
     def log(self, level, msg, *args):
         if level >= (self.level or _level):
             _stream.write("%s:%s:" % (self._level_str(level), self.name))
-            if not args:
+            if level == ERROR:
+                self.dump(msg, *args)
                 print(msg, file=_stream)
             else:
-                print(msg % args, file=_stream)
+                if not args:
+                    print(msg, file=_stream)
+                else:
+                    print(msg % args, file=_stream)
 
     def debug(self, msg, *args):
         self.log(DEBUG, msg, *args)
@@ -82,6 +98,9 @@ def info(msg, *args):
 
 def debug(msg, *args):
     getLogger(None).debug(msg, *args)
+
+def error(msg, *args):
+    getLogger(None).error(msg, *args)
 
 def basicConfig(level=INFO, filename=None, stream=None, format=None):
     global _level, _stream

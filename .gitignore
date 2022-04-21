@@ -135,3 +135,7 @@ dmypy.json
 .lock
 .state
 .current
+server/syslog-ng/log/
+server/log
+esp32.kicad/
+client/module/controller.py
