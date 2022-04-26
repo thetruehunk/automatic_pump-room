@@ -70,6 +70,10 @@
         <h3>Module settings</h3>
         <form action="/send_config" method="GET">
           <div class="field">
+            <label for="CLIENT-ID">CLIENT-ID</label>
+            <input type="text" id="CLIENT-ID" name="CLIENT-ID" value={{config['CLIENT-ID']}}><br><br>
+          </div>
+          <div class="field">
             <label for="SYSLOG-SERVER-IP">SYSLOG-SERVER-IP</label>
             <input type="text" id="SYSLOG-SERVER-IP" name="SYSLOG-SERVER-IP" value={{config['SYSLOG-SERVER-IP']}}><br><br>
           </div>
