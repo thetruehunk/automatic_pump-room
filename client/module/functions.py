@@ -84,15 +84,19 @@ async def feed_watchdog(wdt):
 #     # save_data(data_f, "data.json")
 
 
-def set_config_handler(qs):
+def set_config_handler(form):
     config = load_config("config.json")
-    param = qs.split('&')
-    for item in param:
-        key, value = item.split('=')
+    for key, value in form.items():
         config[key] = value
-    if not 'SYSLOG=True' in qs:
-        config['SYSLOG'] = "False"
     save_config(config, 'config.json')
+
+    #param = qs.split('&')
+    #for item in param:
+    #    key, value = item.split('=')
+    #    config[key] = value
+    #if not 'SYSLOG=True' in qs:
+    #    config['SYSLOG'] = "False"
+    #save_config(config, 'config.json')
 
 
 def require_auth(func):
