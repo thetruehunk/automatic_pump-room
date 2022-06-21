@@ -102,7 +102,7 @@ def set_card():
     return redirect("/", code=303, Response=None)
 
 
-@scheduler.task("cron", id="reset_daily_limit", day="*", hour="19", minute="32")
+@scheduler.task("cron", id="reset_daily_limit", day="*", hour="23", minute="59")
 def reset_daily_limit():
     with app.app_context():
         for row in Card.query.all():
