@@ -1,11 +1,11 @@
 import utime as time
 import machine
 import uasyncio as asyncio
-from machine import Pin, SoftSPI
+from machine import Pin, SoftSPI, PWM
 import NFC_PN532 as nfc
 import urequests as requests
 import json
-from functions import load_config
+from functions import load_config, rgb_map
 import ulogging
 
 
@@ -15,28 +15,39 @@ class Pump:
     logger: object
     reader: object
 
+    def set_rgb(self, red, green, blue):
+        self.led_red.duty(rgb_map(red, 0, 255, 0, 1023))
+        self.led_green.duty(rgb_map(green, 0, 255, 0, 1023))
+        self.led_blue.duty(rgb_map(blue, 0, 255, 0, 1023))
+
     def led_wait_on(self):
-        self.led_green.on()
+        self.set_rgb(0, 255, 0)
     
     def led_wait_off(self):
-        self.led_green.off()
+        self.set_rgb(0, 0, 0)
     
     def led_reading(self):
         for _ in range(4):
-            self.led_green.on()
+            self.set_rgb(0, 255, 0)
             time.sleep(0.2)
-            self.led_green.off()
+            self.set_rgb(0, 0, 0)
             time.sleep(0.2)
     
     def led_warning(self):
-        self.led_blue.on()
-        self.led_green.on()
-        time.sleep(2)
-        self.led_blue.off()
-        self.led_green.off()
+        for _ in range(4):
+            self.set_rgb(255, 255, 0)
+            time.sleep(0.2)
+            self.set_rgb(0, 0, 0)
+            time.sleep(0.2)
+
+    def led_server_lost(self):
+        pass
+    
+    def led_lost_connection(self):
+        pass
     
     def led_error(self):
-        self.led_red.on()
+        self.set_rgb(255, 0, 0)
 
     def info_logging(self, template, *args):
         prefix = 'ID: ' + self.config["CLIENT-ID"] + ': ' 
@@ -71,7 +82,7 @@ class Pump:
             self.led_error()
             time.sleep(5)
 
-    def check_card_reader():
+    def check_card_reader(self):
         pass
 
     def read_card(self):
@@ -160,8 +171,12 @@ class Pump:
         self.relay = Pin(relay, Pin.OUT)
         self.relay.on()
         # RGB led
-        self.led_blue = Pin(led_blue, Pin.OUT)
-        self.led_green = Pin(led_green, Pin.OUT)
-        self.led_red = Pin(led_red, Pin.OUT)
+        #self.led_blue = Pin(led_blue, Pin.OUT)
+        #self.led_green = Pin(led_green, Pin.OUT)
+        #self.led_red = Pin(led_red, Pin.OUT)
+        self.led_blue = PWM(Pin(led_blue), freq=60, duty=0)
+        self.led_green = PWM(Pin(led_green), freq=60, duty=0)
+        self.led_red = PWM(Pin(led_red), freq=60, duty=0)
         # Config
         self.config = load_config("config.json")
+

@@ -49,6 +49,9 @@ async def feed_watchdog(wdt):
         wdt.feed()
         await asyncio.sleep(1)
 
+def rgb_map(segment, in_min, in_max, out_min, out_max):
+    return int((segment - in_min) * (out_max - out_min) / (in_max - in_min) \
+            + out_min)
 
 # def load_data(data_file):
 #     #try:
