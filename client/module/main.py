@@ -38,8 +38,9 @@ def get_config(req, resp):
 @app.route("/send_config")
 @require_auth
 def send_config(req, resp):
-    if req.method == "GET":
-        set_config_handler(req.qs)
+    if req.method == "POST":
+        yield from req.read_form_data()
+        set_config_handler(req.form)
         headers = {"Location": "/"}
         gc.collect()
         yield from picoweb.start_response(resp, status="303", headers=headers)

@@ -104,10 +104,11 @@ def set_card():
 
 @scheduler.task("cron", id="reset_daily_limit", day="*", hour="23", minute="59")
 def reset_daily_limit():
-    for row in Card.query.all():
-        row['daily_left'] = row['daily_limit'] 
-    db.session.commit()
-    app.logger.info("daily limits is reset")
+    with app.app_context():
+        for row in Card.query.all():
+            row.daily_left = row.daily_limit
+        db.session.commit()
+        app.logger.info("daily limits is reset")
 
 
 scheduler.init_app(app)
