@@ -1,10 +1,11 @@
+from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import redirect, request, jsonify, render_template
-from appsrv.data_model import db, Card
+from appsrv.data_model import db, Card, Task
 from flask_apscheduler import APScheduler
 
 
@@ -111,9 +112,28 @@ def reset_daily_limit():
         app.logger.info("daily limits is reset")
 
 
-scheduler.init_app(app)
-scheduler.start()
+def check_status_task():
+    app.logger.info("run check_status_task")
+    with app.app_context():
+        current_date = datetime.now().date()
+        task = Task.query.order_by(Task.id.desc()).first()
+        
+        if task.completed is True and current_date > task.create_date:
+            db.session.add(Task(create_date = current_date))
+            app.logger.info("previous task completed, just added new task")
+        
+        elif task.completed is False or True and current_date == task.create_date:
+            app.logger.info("found todays task, just run scheduler")
+        
+        else:
+            task.completed = True
+            db.session.add(Task(create_date = current_date))
+            reset_daily_limit()
+            app.logger.info("did not find today's task and completed task")
 
-if __name__ == "__main__":
-    app.run(debug=True)
+        db.session.commit()
+        scheduler.init_app(app)
+        scheduler.start()
 
+
+check_status_task()
