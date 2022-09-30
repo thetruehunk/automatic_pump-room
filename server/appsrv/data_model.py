@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from flask_sqlalchemy import SQLAlchemy
+from datetime import date
 
 db = SQLAlchemy()
 
@@ -39,7 +40,6 @@ class Task(db.Model):
     __tablename__ = "tasks"
 
     id: int = db.Column(db.Integer, primary_key=True)
-    create_date = db.Column(db.Date)
-    #create_date = db.Column(db.Date(timezone=True))
-    completed: bool = db.Column(db.Boolean, default=False)
+    create_date: date = db.Column(db.Date)
+    completed: bool = db.Column(db.Boolean, nullable=False, default=False)
 
