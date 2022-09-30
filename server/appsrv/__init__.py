@@ -1,11 +1,12 @@
+from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask
 from flask_httpauth import HTTPBasicAuth
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import redirect, request, jsonify, render_template
-from appsrv.data_model import db, Card
-from flask_apscheduler import APScheduler
+from appsrv.data_model import db, Card, Task
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 handler = RotatingFileHandler("log/server.log", maxBytes=10000, backupCount=1)
@@ -20,11 +21,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 app.logger.addHandler(handler)
 
-class Config:
-    SCHEDULER_API_ENABLED = True
-
-app.config.from_object(Config())
-scheduler = APScheduler()
+scheduler = BackgroundScheduler()
 
 # TODO https://flask-httpauth.readthedocs.io/en/latest/
 # Сделать секьюрненько
@@ -102,7 +99,17 @@ def set_card():
     return redirect("/", code=303, Response=None)
 
 
-@scheduler.task("cron", id="reset_daily_limit", day="*", hour="23", minute="59")
+def db_backup():
+    with app.app_context():
+        database = db.engine.raw_connection()
+        current_date = datetime.now()
+        with open(f"db/backup/{current_date}.sql", "w") as dump:
+            for line in database.iterdump():
+                dump.write("%s\n" % line)
+        dump.close()
+        app.logger.info("create backup")
+
+
 def reset_daily_limit():
     with app.app_context():
         for row in Card.query.all():
@@ -111,9 +118,32 @@ def reset_daily_limit():
         app.logger.info("daily limits is reset")
 
 
-scheduler.init_app(app)
-scheduler.start()
+def check_status_task():
+    app.logger.info("run check_status_task")
+    with app.app_context():
+        current_date = datetime.now().date()
+        task = Task.query.order_by(Task.id.desc()).first()
+        if task is not None:
+            if current_date > task.create_date:
+                if task.completed:
+                    db.session.add(Task(create_date=current_date))
+                    app.logger.info("previous task completed, just added new task")
+                else:
+                    task.completed = True
+                    db.session.add(Task(create_date=current_date))
+                    app.logger.info(
+                        "previous task not completed, status changed and added new task"
+                    )
+            else:
+                app.logger.info("found todays task, just run scheduler")
+        else:
+            db.session.add(Task(create_date=current_date))
+            reset_daily_limit()
+            app.logger.info("did not find today's task and completed task")
+        db.session.commit()
+        db_backup()
+        scheduler.start()
 
-if __name__ == "__main__":
-    app.run(debug=True)
 
+scheduler.add_job(reset_daily_limit, "cron", day="*", hour=23, minute=59)
+check_status_task()

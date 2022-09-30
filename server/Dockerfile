@@ -1,4 +1,5 @@
-FROM ubuntu:latest
+FROM debian:11
+ENV TZ="Europe/Moscow"
 RUN apt-get update -y
 RUN apt-get install -y python3 python3-pip
 COPY . /app
