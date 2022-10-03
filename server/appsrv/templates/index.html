@@ -65,10 +65,14 @@
                                 </select>
                             </td>
                             <td>
+                                {{card["daily_left"]}}
+                                из
                                 <input id=daily_limit type=number name=daily_limit value={{card["daily_limit"]}} required>
                             </td>
                             <td>
-                                <input id=total_limit type=number name=total_limit value={{card["total_left"]}} required>
+                                {{card["total_left"]}}
+                                из
+                                <input id=total_limit type=number name=total_limit value={{card["total_limit"]}} required>
                             </td>
                             <td>
                                 <!--<button onclick="sendData()">Установить</button>-->
