@@ -116,6 +116,7 @@ def reset_daily_limit():
             row.daily_left = row.daily_limit
         db.session.commit()
         app.logger.info("daily limits is reset")
+        db_backup()
 
 
 def check_status_task():
@@ -141,7 +142,6 @@ def check_status_task():
             reset_daily_limit()
             app.logger.info("did not find today's task and completed task")
         db.session.commit()
-        db_backup()
         scheduler.start()
 
 

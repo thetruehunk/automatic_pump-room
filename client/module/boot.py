@@ -5,6 +5,6 @@ import wireless
 
 #esp.osdebug(None)
 wireless.activate()
-#webrepl.start()
+webrepl.start()
 gc.collect()
 

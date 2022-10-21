@@ -22,7 +22,7 @@ pump.init_card_reader()
 
 app = picoweb.WebApp(__name__)
 
-wdt = machine.WDT(timeout=15000)
+wdt = machine.WDT(timeout=70000)
 wdt.feed()
 
 

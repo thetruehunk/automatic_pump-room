@@ -40,8 +40,13 @@ class Pump:
             self.set_rgb(0, 0, 0)
             time.sleep(0.2)
 
-    def led_server_lost(self):
-        pass
+    def led_server_timeout(self):
+        for _ in range(4):
+            self.set_rgb(0, 0, 255)
+            time.sleep(0.2)
+            self.set_rgb(0, 0, 0)
+            time.sleep(0.2)
+        
     
     def led_lost_connection(self):
         pass
@@ -136,6 +141,9 @@ class Pump:
         except TypeError as err:
             self.error_logging(err)
             self.led_error()
+        except OSError as err:
+            #self.error_logging(err)
+            self.led_server_timeout()
 
     async def read_card_loop(self):
         while True:
