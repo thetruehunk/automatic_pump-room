@@ -130,6 +130,7 @@ dmypy.json
 # Project
 *.json
 *.db3
+*.sql
 *.persist
 *.pid
 .lock
@@ -138,3 +139,5 @@ dmypy.json
 server/syslog-ng/log/
 server/log
 esp32.kicad/
+.DS_Store
+.server/db/
