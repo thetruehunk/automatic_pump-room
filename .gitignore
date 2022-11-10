@@ -141,3 +141,4 @@ server/log
 esp32.kicad/
 .DS_Store
 .server/db/
+docs/
