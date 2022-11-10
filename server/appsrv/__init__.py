@@ -1,11 +1,24 @@
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask
-from flask_httpauth import HTTPBasicAuth
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import redirect, request, jsonify, render_template
-from appsrv.data_model import db, Card, Task
+from flask import Flask, flash, redirect, request, jsonify, render_template, url_for
+
+# from flask_httpauth import HTTPBasicAuth
+# from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import (
+    LoginManager,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired
+
+# import bcrypt
+from flask_bcrypt import Bcrypt
+from appsrv.data_model import db, Card, User, Task
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -18,38 +31,112 @@ handler.setFormatter(
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///../db/data.db3"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = "em93jU3fnI(n2fu83jK3jf1J4$3*2n123J#1334f"
 db.init_app(app)
 app.logger.addHandler(handler)
 
 scheduler = BackgroundScheduler()
+bcrypt = Bcrypt(app)
 
-# TODO https://flask-httpauth.readthedocs.io/en/latest/
-# Сделать секьюрненько
-auth = HTTPBasicAuth()
-users = {"trekbit": generate_password_hash("123456")}
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
 
 
-@auth.verify_password
-def verify_password(username, password):
-    if username in users and check_password_hash(users.get(username), password):
-        return username
-    else:
-        app.logger.info("username or password wrong")
+class LoginForm(FlaskForm):
+    name = StringField("Логин", validators=[DataRequired()])
+    password = PasswordField("Пароль", validators=[DataRequired()])
+    submit = SubmitField("Войти")
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    # return User.query.get(user_id)
+    return User.query.filter(User.name == user_id).one()
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter(User.name == form.name.data).one()
+        if user:
+            if bcrypt.check_password_hash(user.password, form.password.data):
+                user.authenticated = True
+                db.session.commit()
+                login_user(user, remember=True)
+                # return redirect(next or url_for('/'))
+                return redirect(url_for("home"))
+    return render_template("login.html", form=form)
+
+
+@app.route("/logout", methods=["GET"])
+@login_required
+def logout():
+    user = User.query.filter(User.name == current_user.name).one()
+    user.authenticated = False
+    db.session.commit()
+    logout_user()
+    return redirect(url_for("login"))
+
+
+@app.route("/settings", methods=["GET"])
+@login_required
+def settings():
+    if current_user.name == "admin":
+        users = [dict(row.__dict__) for row in User.query.all()]
+        return render_template(
+            "settings.html", users=users, current_user=current_user.name
+        )
+    return redirect(url_for("home"))
+
+
+@app.route("/set_settings", methods=["POST"])
+@login_required
+def set_settings():
+    if current_user.name == "admin":
+        settings_data = request.json
+        user = User.query.get(settings_data["id"])
+        if settings_data["enabled"] == "on":
+            user.enabled = True
+        else:
+            user.enabled = False
+        user.name = settings_data["name"]
+        user.password = bcrypt.generate_password_hash(
+            (settings_data["password"]).encode("utf-8")
+        )
+        db.session.commit()
+    return redirect(url_for("settings"))
 
 
 @app.route("/", methods=["GET"])
-@auth.login_required
+@login_required
 def home():
     cards = [dict(row.__dict__) for row in Card.query.all()]
+    users = {}
+    for row in [row.serialized for row in User.query.all()]:
+        users[row["id"]] = row["name"]
     app.logger.info(f"requested home page")
-    return render_template("index.html", data=cards)
+    return render_template(
+        "index.html", cards=cards, users=users, current_user=current_user.name
+    )
 
 
 @app.route("/analytics", methods=["GET"])
-@auth.login_required
+@login_required
 def analytics():
     app.logger.info(f"requested analytics page")
     return render_template("analytics.html")
+
+
+@app.route("/api/v1/users/add_user", methods=["GET"])
+@login_required
+def add_user():
+    if current_user.name == "admin":
+        user = User(name="new_user", password="123456", enabled=False)
+        db.session.add(user)
+        db.session.commit()
+    return redirect(url_for("settings"))
 
 
 @app.route("/api/v1/resources/get_cards", methods=["GET"])
@@ -86,6 +173,7 @@ def update_card():
 @app.route("/api/v1/resources/set_card", methods=["POST"])
 def set_card():
     post_data = request.json
+    user_id = current_user.id
     card = Card.query.filter(Card.card_id == post_data["card_id"]).first()
     card.total_limit = int(post_data["total_limit"])
     card.total_left = int(post_data["total_limit"])
@@ -93,6 +181,7 @@ def set_card():
     card.daily_left = int(post_data["daily_limit"])
     card.water_type = int(post_data["water_type"])
     card.date_init = post_data["date_init"]
+    card.user_who_init = int(user_id)
     card.realese_count = 0
     db.session.commit()
     app.logger.info(f"set limits for card {post_data}")
