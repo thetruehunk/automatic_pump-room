@@ -1,10 +1,7 @@
 from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, flash, redirect, request, jsonify, render_template, url_for
-
-# from flask_httpauth import HTTPBasicAuth
-# from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, redirect, request, jsonify, render_template, url_for
 from flask_login import (
     LoginManager,
     current_user,
@@ -15,8 +12,6 @@ from flask_login import (
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired
-
-# import bcrypt
 from flask_bcrypt import Bcrypt
 from appsrv.data_model import db, Card, User, Task
 from apscheduler.schedulers.background import BackgroundScheduler

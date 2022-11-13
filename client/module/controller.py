@@ -65,9 +65,9 @@ class Pump:
     
     def error_logging(self, template, *args):
         prefix = 'ID: ' + self.config["CLIENT-ID"] + ': ' 
-        if args is None:
-            ulogging.error(template)
-            self.syslog.error(prefix + template)
+        if len(args) == 0:
+            ulogging.error(str(template))
+            self.syslog.error(prefix + str(template))
         else:
             ulogging.error(template.format(*args))
             self.syslog.error(prefix + template.format(*args))
@@ -142,8 +142,11 @@ class Pump:
             self.error_logging(err)
             self.led_error()
         except OSError as err:
-            #self.error_logging(err)
+            self.error_logging(err)
             self.led_server_timeout()
+        except IndexError as err:
+            self.error_logging(err)
+            self.led_error()
 
     async def read_card_loop(self):
         while True:
